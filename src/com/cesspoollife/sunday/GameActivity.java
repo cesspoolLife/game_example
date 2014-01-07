@@ -5,36 +5,34 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.graphics.Path;
+import android.graphics.PixelFormat;
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.widget.GridView;
 
 public class GameActivity extends Activity {
-	private int timer = 60*10;
-	private boolean isFinish = false;
 	private int stage;
-	private int bOrder;
-	private PathView pv = null;
-	private Handler handler = new Handler();
-	private Runnable runnable = new Runnable() {
-        public void run() {
-            afficher();
-        }
-    };
-    private Handler bHandler = new Handler();
-    private Runnable bRunnable = new Runnable(){
-    	public void run(){
-    		setBoomBitmap();
-    	}
+    private SurfaceView sfvTrack;
+    private Handler handler = new Handler();
+    private Runnable runnable = new Runnable() {
+	    public void run() {
+	        gameFinish(false);
+	    }
     };
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_game);
-		pv = (PathView)findViewById(R.id.cavas_path);
+		
+		sfvTrack = (SurfaceView)findViewById(R.id.cavas_path);
+		sfvTrack.setZOrderOnTop(true);
+		SurfaceHolder sfhTrack = sfvTrack.getHolder();
+		sfhTrack.setFormat(PixelFormat.TRANSPARENT);
+		
 		Intent intent= getIntent();
 		stage = intent.getIntExtra("stage",0);
 		
@@ -45,36 +43,25 @@ public class GameActivity extends Activity {
 		GridView gv = (GridView)findViewById(R.id.cardgroup);
 		gv.setAdapter(adapter);
 		gv.setOnItemClickListener(new ItemClickListener());
-		runnable.run();
+		
+	}
+	
+	public void setPath(Path p){
+		((ThreadView) sfvTrack).setPath(p);
+		if(p==null)
+			return;
+		Handler handler = new Handler();
+		Runnable runnable = new Runnable() {
+	        public void run() {
+	        	GameActivity.this.setPath(null);
+	        }
+	    };
+	    handler.postDelayed(runnable, 300); 
 	}
 	
 	public void drawBoom(int[] p1, int[] p2){
-		pv.setPosition(p1, p2);
-		bOrder = 1;
-		setBoomBitmap();
+		((ThreadView) sfvTrack).setBoomPosition(p1, p2);
 	}
-	
-	public void setBoomBitmap(){
-		if(bOrder>8){
-			pv.setBitmap(null);
-			return;
-		}
-		String name = "b_"+String.valueOf(bOrder++);
-		Bitmap bm = BitmapFactory.decodeResource(getResources(), getResources().getIdentifier(name, "drawable", getPackageName()));
-		pv.setBitmap(bm);
-		bHandler.postDelayed(bRunnable, 100);
-	}
-	
-	public void afficher(){
-		if(isFinish)
-			return;
-		if(timer<0){
-			gameFinish(false);
-		}else{
-			pv.setTime(timer--);
-	        handler.postDelayed(runnable, 100);
-		}
-    }
 	
 	/*
 	 * 게임 종료 함수
@@ -84,6 +71,11 @@ public class GameActivity extends Activity {
 	public void exitGame(){
 		Intent intent = new Intent(GameActivity.this,MainActivity.class);
 		startActivity(intent);
+		finish();
+	}
+	
+	public void timeOver(){
+		handler.postDelayed(runnable, 10);
 	}
 	
 	/*
@@ -94,7 +86,7 @@ public class GameActivity extends Activity {
 	 */
 	@Override
 	public void onBackPressed() {
-		isFinish = true;
+		((ThreadView) sfvTrack).setPause();
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		//Chain together various setter methods to set the dialog characteristics
 		builder.setTitle("Exit!")
@@ -106,7 +98,7 @@ public class GameActivity extends Activity {
 			
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
-				GameActivity.this.exitGame();;
+				GameActivity.this.exitGame();
 			}
 		});
 		
@@ -114,8 +106,7 @@ public class GameActivity extends Activity {
 			
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
-				isFinish = false;
-				GameActivity.this.afficher();
+				((ThreadView) sfvTrack).setRestart();
 			}
 		});
 		
@@ -124,8 +115,7 @@ public class GameActivity extends Activity {
 
 			@Override
 			public void onCancel(DialogInterface dialog) {
-				isFinish = false;
-				GameActivity.this.afficher();
+				((ThreadView) sfvTrack).setRestart();
 			}});
 		
 		AlertDialog dialog = builder.create();
@@ -141,12 +131,12 @@ public class GameActivity extends Activity {
 	 */
 	public void gameFinish(boolean success){
 		if(success){
-			isFinish = true;
+			((ThreadView) sfvTrack).setPause();
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
     		
     		//Chain together various setter methods to set the dialog characteristics
     		builder.setTitle("성 공!")
-    		.setMessage("기록 : "+String.valueOf(60-timer/10)+"초")//set message in content area.
+    		.setMessage("기록 : "+String.valueOf(((ThreadView) sfvTrack).getRemainTime())+"초")//set message in content area.
     		.setCancelable(true);
     		
     		//set action buttons, you can get button text from resources too.
@@ -154,7 +144,7 @@ public class GameActivity extends Activity {
 				
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
-					GameActivity.this.exitGame();;
+					GameActivity.this.exitGame();
 				}
 			});
     		
@@ -173,6 +163,7 @@ public class GameActivity extends Activity {
     		//show dialog
     		dialog.show();
 		}else{
+			((ThreadView) sfvTrack).setPause();
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
     		
     		//Chain together various setter methods to set the dialog characteristics
