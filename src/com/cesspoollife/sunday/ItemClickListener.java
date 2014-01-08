@@ -62,6 +62,10 @@ public class ItemClickListener implements AdapterView.OnItemClickListener {
 				block.removeCard(this.first_position);//두 위치를 0으로 변경
 				block.removeCard(position);
 				
+
+				((FrameLayout)view).removeAllViews(); //두 위치의 이미지만 제거 setGridViewChange()사용하는 것보다 빠름.
+                ((FrameLayout)parent.getChildAt(this.first_position)).removeAllViews();
+				
 				//블럭이 연결가능하지 않다면 재배열
 				while(!block.isAvailable()){
 					if(block.isFinish()){//남은 블럭이 없을 시 게임 종료 함수 호출
@@ -72,8 +76,6 @@ public class ItemClickListener implements AdapterView.OnItemClickListener {
 					((GameActivity)view.getContext()).setGridViewChange();//재배열할때만 GridView를 변경
 				}
 			//	((GameActivity)view.getContext()).setGridViewChange();
-				((FrameLayout)view).removeAllViews(); //두 위치의 이미지만 제거 setGridViewChange()사용하는 것보다 빠름.
-                ((FrameLayout)parent.getChildAt(this.first_position)).removeAllViews();
                 
 				this.first_position = -1;//첫위치 다시 초기화
 			}else
