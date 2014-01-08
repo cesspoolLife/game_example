@@ -11,35 +11,36 @@ public class GroupAdapter extends BaseAdapter {
 	
 	private Context mContext;
 	int layoutResourceId;
-    Shisensho card;
+    Shisensho block;
 
-	public GroupAdapter(Context context, int layoutResourceId, Shisensho card){
+	public GroupAdapter(Context context, int layoutResourceId, Shisensho block){
 		this.mContext = context;
 		this.layoutResourceId = layoutResourceId;
-        this.card = card;
+        this.block = block;
 	}
 	@Override
 	public int getCount() {
-		// TODO Auto-generated method stub
-		return card.size();
+		return block.size();
 	}
 
 	@Override
 	public Object getItem(int position) {
-		return card.get(position);
+		return block.get(position);
 	}
 
 	@Override
 	public long getItemId(int position) {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
+	/*
+	 * GridView Adapter를 통해 block image들을 보여준다.
+	 */
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		convertView = ((Activity) mContext).getLayoutInflater().inflate(layoutResourceId, parent, false);
 		ImageView iv = (ImageView) convertView.findViewById(R.id.cardimage);
-		int value = card.get(position);
+		int value = block.get(position);
 		if(value==1)
 			iv.setImageResource(R.drawable.img_1);
 		else if(value==2)

@@ -13,9 +13,16 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.GridView;
 
+/*
+ * 게임 실행 Activity
+ */
 public class GameActivity extends Activity {
+	
 	private int stage;
+	private GroupAdapter adapter;
+	private GridView gv;
     private SurfaceView sfvTrack;
+    //시간초과로 인한 게임 종료를 위한 handler
     private Handler handler = new Handler();
     private Runnable runnable = new Runnable() {
 	    public void run() {
@@ -36,16 +43,23 @@ public class GameActivity extends Activity {
 		Intent intent= getIntent();
 		stage = intent.getIntExtra("stage",0);
 		
-		Shisensho card = Shisensho.getInstace();
-		card.makeCard(stage);
+		Shisensho block = Shisensho.getInstace();
+		block.makeBlock(stage);//단계별로 블럭을 만든다.
 		
-		GroupAdapter adapter = new GroupAdapter(this, R.layout.image_layout, card);
-		GridView gv = (GridView)findViewById(R.id.cardgroup);
+		adapter = new GroupAdapter(this, R.layout.image_layout, block);
+		gv = (GridView)findViewById(R.id.cardgroup);
 		gv.setAdapter(adapter);
-		gv.setOnItemClickListener(new ItemClickListener());
-		
+		gv.setOnItemClickListener(new ItemClickListener());		
 	}
 	
+	public void setGridViewChange(){
+		adapter.notifyDataSetChanged();
+	}
+	
+	/*
+	 * 패스를 받아 넘겨주는 함수.
+	 * handler를 통해서 0.3초후에 path를 지워준다.
+	 */
 	public void setPath(Path p){
 		((ThreadView) sfvTrack).setPath(p);
 		if(p==null)
@@ -59,6 +73,9 @@ public class GameActivity extends Activity {
 	    handler.postDelayed(runnable, 300); 
 	}
 	
+	/*
+	 * 폭탄 애니메이션 두 위치를 지정
+	 */
 	public void drawBoom(int[] p1, int[] p2){
 		((ThreadView) sfvTrack).setBoomPosition(p1, p2);
 	}
@@ -74,8 +91,12 @@ public class GameActivity extends Activity {
 		finish();
 	}
 	
+	/*
+	 * 시간이 다 되면 호출되는 함수.
+	 * handler를 이용해서 gameFinish 함수를 호출한다.(ThreadView의 Thread에서 직접 gameFinish 함수를 호출할수 없기때문에)
+	 */
 	public void timeOver(){
-		handler.postDelayed(runnable, 10);
+		handler.postDelayed(runnable, 0);
 	}
 	
 	/*
@@ -88,12 +109,10 @@ public class GameActivity extends Activity {
 	public void onBackPressed() {
 		((ThreadView) sfvTrack).setPause();
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		//Chain together various setter methods to set the dialog characteristics
 		builder.setTitle("Exit!")
-		.setMessage("게임을 종료하시겠습니까?")//set message in content area.
+		.setMessage("게임을 종료하시겠습니까?")
 		.setCancelable(true);
 		
-		//set action buttons, you can get button text from resources too.
 		builder.setPositiveButton("확 인", new DialogInterface.OnClickListener() {
 			
 			@Override
@@ -116,11 +135,11 @@ public class GameActivity extends Activity {
 			@Override
 			public void onCancel(DialogInterface dialog) {
 				((ThreadView) sfvTrack).setRestart();
-			}});
+			}
+		});
 		
 		AlertDialog dialog = builder.create();
 		
-		//show dialog
 		dialog.show();
 	}
 
@@ -134,12 +153,10 @@ public class GameActivity extends Activity {
 			((ThreadView) sfvTrack).setPause();
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
     		
-    		//Chain together various setter methods to set the dialog characteristics
     		builder.setTitle("성 공!")
-    		.setMessage("기록 : "+String.valueOf(((ThreadView) sfvTrack).getRemainTime())+"초")//set message in content area.
+    		.setMessage("기록 : "+String.valueOf(((ThreadView) sfvTrack).getUseTime())+"초")
     		.setCancelable(true);
     		
-    		//set action buttons, you can get button text from resources too.
     		builder.setPositiveButton("확 인", new DialogInterface.OnClickListener() {
 				
 				@Override
@@ -158,20 +175,25 @@ public class GameActivity extends Activity {
 				}
 			});
     		
+    		builder.setOnCancelListener(new OnCancelListener(){
+
+    			@Override
+    			public void onCancel(DialogInterface dialog) {
+    				GameActivity.this.exitGame();
+    			}
+    		});
+    		
     		AlertDialog dialog = builder.create();
     		
-    		//show dialog
     		dialog.show();
 		}else{
 			((ThreadView) sfvTrack).setPause();
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
     		
-    		//Chain together various setter methods to set the dialog characteristics
     		builder.setTitle("실 패!")
-    		.setMessage("다시 도전해 주세요")//set message in content area.
+    		.setMessage("다시 도전해 주세요")
     		.setCancelable(true);
     		
-    		//set action buttons, you can get button text from resources too.
     		builder.setPositiveButton("확 인", new DialogInterface.OnClickListener() {
 				
 				@Override
@@ -179,6 +201,14 @@ public class GameActivity extends Activity {
 					GameActivity.this.exitGame();;
 				}
 			});
+    		
+    		builder.setOnCancelListener(new OnCancelListener(){
+
+    			@Override
+    			public void onCancel(DialogInterface dialog) {
+    				GameActivity.this.exitGame();
+    			}
+    		});
     		
     		AlertDialog dialog = builder.create();
     		
