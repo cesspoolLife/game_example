@@ -20,7 +20,7 @@
         android:verticalSpacing="@dimen/verticalSpacing" >
     </GridView>
 
-    <com.cesspoollife.sunday.ThreadView
+    <com.oopsbaby.sunday.ThreadView
         android:id="@+id/cavas_path"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
