@@ -19,6 +19,14 @@ public final class R {
          */
         public static final int activity_horizontal_margin=0x7f040000;
         public static final int activity_vertical_margin=0x7f040001;
+        public static final int block_height=0x7f040002;
+        public static final int block_width=0x7f040003;
+        public static final int round_circle=0x7f040007;
+        public static final int tick_rec=0x7f040009;
+        public static final int timer_size=0x7f040008;
+        public static final int verticalSpacing=0x7f040004;
+        public static final int x_circle=0x7f040005;
+        public static final int y_circle=0x7f040006;
     }
     public static final class drawable {
         public static final int b_1=0x7f020000;
@@ -46,10 +54,11 @@ public final class R {
         public static final int item_select=0x7f020016;
     }
     public static final class id {
-        public static final int action_settings=0x7f080008;
+        public static final int action_settings=0x7f080009;
+        public static final int blockimage=0x7f080008;
         public static final int cardgroup=0x7f080000;
-        public static final int cardimage=0x7f080007;
         public static final int cavas_path=0x7f080001;
+        public static final int layoutimage=0x7f080007;
         public static final int stage_1=0x7f080002;
         public static final int stage_2=0x7f080003;
         public static final int stage_3=0x7f080004;

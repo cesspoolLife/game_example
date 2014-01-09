@@ -1,5 +1,7 @@
 package com.cesspoollife.sunday;
 
+import java.util.List;
+
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -11,7 +13,6 @@ import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -50,8 +51,8 @@ public class ThreadView extends SurfaceView implements SurfaceHolder.Callback {
     /*
      * Path
      */
-    public void setPath(Path p){
-    	((DrawThread) drawThread).setPath(p);
+    public void setPathPosition(List<int[]> p){
+    	((DrawThread) drawThread).setPathPosition(p);
     }
     
     /*
@@ -81,6 +82,14 @@ public class ThreadView extends SurfaceView implements SurfaceHolder.Callback {
     public void setPause(){
     	((DrawThread) drawThread).setPause();
     }
+    
+    /*
+     * 종료
+     */
+    public void setStop(){
+    	((DrawThread) drawThread).setStop();
+    	drawThread.interrupt();
+    }
 
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width,
@@ -95,8 +104,12 @@ public class ThreadView extends SurfaceView implements SurfaceHolder.Callback {
 		drawThread.start();
 	}
 
+	/*
+	 * Thread안에 run이 죽지 않을 경우를 대비해 항상 stop함수를 호출.
+	 */
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder) {
+		((DrawThread) drawThread).setStop();
 		drawThread.interrupt();
 	}
 	
@@ -108,6 +121,7 @@ public class ThreadView extends SurfaceView implements SurfaceHolder.Callback {
 		final private Long timeLimit = (long) 60;
 		final private int FRAME = 1000/60;
 		private boolean PAUSE;
+		private boolean STOP;
 		private Long pauseTime;
 		private Context mContext;
     	private SurfaceHolder mHolder;
@@ -131,7 +145,14 @@ public class ThreadView extends SurfaceView implements SurfaceHolder.Callback {
     	private int[] pBoom1;
     	private int[] pBoom2;
     	private int orderBoom;
-    	private int boomSize;
+    	private float boomXPosition;
+    	private float boomYPosition;
+    	private float dx;
+    	private float dy;
+    	private float length;
+    	private List<int[]> path;
+    	private int pathSize;
+    	private int orderPath;
     	
     	/*
     	 * DrawThread 생성자
@@ -139,6 +160,7 @@ public class ThreadView extends SurfaceView implements SurfaceHolder.Callback {
     	 */
     	public DrawThread(Context context, SurfaceHolder surfaceHolder){
     		PAUSE = false;
+    		STOP = false;
     		mContext = context;
     		setFigureSize();
     		mHolder = surfaceHolder;
@@ -156,30 +178,53 @@ public class ThreadView extends SurfaceView implements SurfaceHolder.Callback {
     		paintRemain.setTextSize(textSize);
     		mBitmap = null;
     		orderBoom=0;
+    		path = null;
+    		orderPath = -1;
+    		pathSize = 0;
     	}
     	
     	/*
-    	 * 도형들의 크기와 위치를 지정하는 함수(기기 호환을 위해)
+    	 * 도형들의 크기와 위치를 지정하는 함수(기기 호환을 위해 dip에 맞게 pixel의 사이즈를 설정해준다.)
     	 */
     	private void setFigureSize(){
     		r = getResources();
-    		roundCircle = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, r.getDisplayMetrics());
-    		xCircle = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, r.getDisplayMetrics());
-    		yCircle = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, r.getDisplayMetrics());
-    		textSize  = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 25, r.getDisplayMetrics());
+    		roundCircle = mContext.getResources().getDimensionPixelSize(R.dimen.round_circle);
+    		xCircle = mContext.getResources().getDimensionPixelSize(R.dimen.x_circle);
+    		yCircle = mContext.getResources().getDimensionPixelSize(R.dimen.y_circle);
+    		textSize  = mContext.getResources().getDimensionPixelSize(R.dimen.timer_size);
     		xText = (float) (xCircle-(textSize/2));
     		yText = (float) (yCircle+(textSize/4));
-    		topRec = yCircle-TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2, r.getDisplayMetrics());
-    		botRec = yCircle+TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2, r.getDisplayMetrics());
+    		topRec = yCircle-mContext.getResources().getDimensionPixelSize(R.dimen.tick_rec);
+    		botRec = yCircle+mContext.getResources().getDimensionPixelSize(R.dimen.tick_rec);
     		leftRec = xCircle+roundCircle;
-    		boomSize = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 25, r.getDisplayMetrics());
+    		Bitmap bm = BitmapFactory.decodeResource(getResources(), getResources().getIdentifier("b_1", "drawable", mContext.getPackageName()));
+    		dx = mContext.getResources().getDimensionPixelSize(R.dimen.block_width)/2;
+    		dy = mContext.getResources().getDimensionPixelSize(R.dimen.block_height)/2;
+    		boomXPosition = bm.getWidth()/2-dx;
+    		boomYPosition = bm.getHeight()/2-dy;
+    		length = (r.getDisplayMetrics().widthPixels-((int)xCircle*2)-((int)roundCircle*2))/60;
+    	}
+    	
+
+    	/*
+    	 * 폭탄 위치를 지정해준다.
+    	 * 포탄을 그릴수 있게 orderBoom변수를 1로 바꿔준다.
+    	 */
+    	public void setBoomPosition(int[] p1, int[] p2){
+    		pBoom1 = p1;
+    		pBoom2 = p2;
+    		orderBoom=1;
     	}
     	
     	/*
-    	 * Path 지정 함수
+    	 * 위치를 넘겨 받는다.
+    	 * 폭탄의 순서를 0부터 시작
+    	 * 사이즈 만큼만 그릴수 있도록 변수로 저장했다.
     	 */
-    	public void setPath(Path p){
-    		mPath = p;
+    	public void setPathPosition(List<int[]> p){
+    		orderPath = 0;
+    		path = p;
+    		pathSize = p.size();
     	}
     	
     	/*
@@ -200,6 +245,15 @@ public class ThreadView extends SurfaceView implements SurfaceHolder.Callback {
     	}
     	
     	/*
+    	 * 종료
+    	 */
+    	public void setStop(){
+    		mPath = null;
+    		mBitmap = null;
+    		STOP = true;
+    	}
+    	
+    	/*
     	 * 남은 시간을 반환.
     	 */
     	public int getUseTime(){
@@ -211,22 +265,12 @@ public class ThreadView extends SurfaceView implements SurfaceHolder.Callback {
     	 * 기존에 있던 path와 폭탄은 바로 화면에서 제거함
     	 */
     	private boolean isTimeOver(){
-    		if((System.currentTimeMillis()-startTime)/1000<60)
+    		if(((System.currentTimeMillis()-startTime)/1000<60)||PAUSE)
     			return false;
     		mPath = null;
     		mBitmap = null;
     		((GameActivity)mContext).timeOver();//GameActivity클래스의 timeOver함수를 호출해서 게임 종료를 알린다..
     		return true;
-    	}
-    	
-    	/*
-    	 * 폭탄 위치를 지정해준다.
-    	 * 포탄을 그릴수 있게 orderBoom변수를 1로 바꿔준다.
-    	 */
-    	public void setBoomPosition(int[] p1, int[] p2){
-    		pBoom1 = p1;
-    		pBoom2 = p2;
-    		orderBoom=1;
     	}
     	
     	/*
@@ -236,7 +280,7 @@ public class ThreadView extends SurfaceView implements SurfaceHolder.Callback {
     	private void setBoom(){ 
     		if(orderBoom==0)
     			return;
-    		if(orderBoom>32){ // 폭탄을 다 그렸다면 초기화.
+    		if(orderBoom>35){ // 폭탄을 다 그렸다면 초기화.
     			orderBoom=0;
     			mBitmap = null;
     			return;
@@ -249,6 +293,31 @@ public class ThreadView extends SurfaceView implements SurfaceHolder.Callback {
     		Bitmap bm = BitmapFactory.decodeResource(getResources(), getResources().getIdentifier(name, "drawable", mContext.getPackageName()));
     		mBitmap = bm;
     	}
+    	
+    	/*
+    	 * Path 지정 함수
+    	 * 한프레임마다 path가 한칸씩 길어짐.
+    	 */    	
+    	private void setPath(){
+    		if(orderPath<0)
+    			return;
+    		if(orderPath>=pathSize){
+    			orderPath = -1;
+    			mPath = null;
+    			return;
+    		}
+    		Path p = new Path();
+    		for(int i=0;i<=orderPath;i++){
+    			if(p.isEmpty())
+    				p.moveTo(path.get(i)[0], path.get(i)[1]);
+    			else{
+    				p.lineTo(path.get(i)[0], path.get(i)[1]);
+    			}
+    		}
+    		mPath = p;
+    		orderPath++;
+    		mPath.offset(dx, dy);
+    	}
 
     	/*
     	 * Thread를 start했을때 호출되는 함수
@@ -260,6 +329,8 @@ public class ThreadView extends SurfaceView implements SurfaceHolder.Callback {
 			Long pre = System.currentTimeMillis();//프레임 계산을 위한 시간 변수
 			Long cur = null;
 			while(true){
+				if(isTimeOver()||STOP)//시간이 종료되거나 게임을 종료한다면 무한 루프를 빠져나온다.
+					break;
 				cur = System.currentTimeMillis();
 				if(cur-pre<FRAME||PAUSE)//60 fps 로 동작함, 일시 정지시 중지 
 					continue;
@@ -269,7 +340,7 @@ public class ThreadView extends SurfaceView implements SurfaceHolder.Callback {
 					c = mHolder.lockCanvas();
 					synchronized ( mHolder ){
 						setBoom();//폭탄 설정
-						isTimeOver();//시간 초과 확인.
+						setPath();//Path 설정
 						doDraw(c);//캔버스를 그려준다.
 					}
 				}catch (Exception e){
@@ -280,9 +351,19 @@ public class ThreadView extends SurfaceView implements SurfaceHolder.Callback {
 						mHolder.unlockCanvasAndPost(c);
 					}
 				}
-				
-				if(isTimeOver())//시간이 종료되면 while문을 빠져나온다.
-					break;
+			}
+			Canvas c = null;//종료되었을시 캔버스의 잔여물을 제거 하기 위해 한번더 호출
+			try{
+				c = mHolder.lockCanvas();
+				synchronized ( mHolder ){
+					doDraw(c);
+				}
+			}catch (Exception e){
+				Log.e("ThreadVeiw", "Thread Exception", e);
+			}finally {
+				if (c!=null){
+					mHolder.unlockCanvasAndPost(c);
+				}
 			}
 		}
 				
@@ -297,15 +378,14 @@ public class ThreadView extends SurfaceView implements SurfaceHolder.Callback {
 		    	canvas.drawPath(mPath, paintPath);
 	    	}
 	    	if(remain >= 0){//시간이 남아 있을때만
-	    		rightRec = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 
-	    				4*remain, r.getDisplayMetrics());//시간 바의 길이를 계산
+	    		rightRec = length*remain;//시간 바의 길이를 계산
 	    		canvas.drawCircle(xCircle, yCircle, roundCircle, paintFigure);//원을 그리고
 	    		canvas.drawRect(leftRec, topRec, leftRec+rightRec, botRec, paintFigure);//시간 바를 그리고
 	    		canvas.drawText(String.valueOf((int)Math.ceil(remain)), xText, yText, paintRemain);// 남은 시간을 표시한다.
 	    	}
 	    	if(mBitmap != null){//폭탄이 있을때만, 위치에 boomSize를 빼줘서 Block위에 폭탄이 터지는 효과 
-	    		canvas.drawBitmap(mBitmap, pBoom1[0]-boomSize, pBoom1[1]-boomSize, null);
-	    		canvas.drawBitmap(mBitmap, pBoom2[0]-boomSize, pBoom2[1]-boomSize, null);
+	    		canvas.drawBitmap(mBitmap, pBoom1[0]-boomXPosition, pBoom1[1]-boomYPosition, null);
+	    		canvas.drawBitmap(mBitmap, pBoom2[0]-boomXPosition, pBoom2[1]-boomYPosition, null);
 	    	}
 		}
     }

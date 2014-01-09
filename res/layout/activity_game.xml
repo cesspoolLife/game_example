@@ -2,32 +2,27 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/ingame"
     android:paddingBottom="@dimen/activity_vertical_margin"
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context=".GameActivity"
-    android:background="@drawable/ingame" >
+    tools:context=".GameActivity" >
 
     <GridView
         android:id="@+id/cardgroup"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
+		android:layout_centerInParent="true"
         android:drawSelectorOnTop="true"
         android:listSelector="@drawable/item_select"
         android:numColumns="12"
-        android:verticalSpacing="3dp" >
-        
+        android:verticalSpacing="@dimen/verticalSpacing" >
     </GridView>
 
-	<com.cesspoollife.sunday.ThreadView
-	    android:id="@+id/cavas_path"
-	    android:layout_width="match_parent"
-	    android:layout_height="match_parent"
-	    android:layout_alignParentTop="true"
-	    android:layout_alignParentBottom="true"
-	    android:layout_alignParentLeft="true"
-	    android:layout_alignParentRight="true" />
+    <com.cesspoollife.sunday.ThreadView
+        android:id="@+id/cavas_path"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
 </RelativeLayout>

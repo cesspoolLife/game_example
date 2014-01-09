@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="activity_horizontal_margin">0dp</dimen>
+    <dimen name="activity_vertical_margin">0dp</dimen>
+	<dimen name="block_height">36dp</dimen>
+	<dimen name="block_width">26dp</dimen>
+	<dimen name="verticalSpacing">40dp</dimen>
+	
+	<dimen name="x_circle">40dp</dimen>
+	<dimen name="y_circle">40dp</dimen>
+	<dimen name="round_circle">20dp</dimen>
+	<dimen name="timer_size">25dp</dimen>
+	<dimen name="tick_rec">2dp</dimen>
+</resources>

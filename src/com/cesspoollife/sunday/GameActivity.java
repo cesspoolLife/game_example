@@ -1,11 +1,12 @@
 package com.cesspoollife.sunday;
 
+import java.util.List;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
-import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.os.Bundle;
 import android.os.Handler;
@@ -49,28 +50,21 @@ public class GameActivity extends Activity {
 		adapter = new GroupAdapter(this, R.layout.image_layout, block);
 		gv = (GridView)findViewById(R.id.cardgroup);
 		gv.setAdapter(adapter);
-		gv.setOnItemClickListener(new ItemClickListener());		
+		gv.setOnItemClickListener(new ItemClickListener());
 	}
 	
+	/*
+	 * adapter의 값이 변경되었을때 호출다는 함수.
+	 */
 	public void setGridViewChange(){
 		adapter.notifyDataSetChanged();
 	}
 	
 	/*
 	 * 패스를 받아 넘겨주는 함수.
-	 * handler를 통해서 0.3초후에 path를 지워준다.
 	 */
-	public void setPath(Path p){
-		((ThreadView) sfvTrack).setPath(p);
-		if(p==null)
-			return;
-		Handler handler = new Handler();
-		Runnable runnable = new Runnable() {
-	        public void run() {
-	        	GameActivity.this.setPath(null);
-	        }
-	    };
-	    handler.postDelayed(runnable, 300); 
+	public void setPathPosition(List<int[]> p){
+		((ThreadView) sfvTrack).setPathPosition(p);
 	}
 	
 	/*
@@ -117,6 +111,7 @@ public class GameActivity extends Activity {
 			
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
+				((ThreadView) sfvTrack).setStop();
 				GameActivity.this.exitGame();
 			}
 		});
@@ -139,18 +134,18 @@ public class GameActivity extends Activity {
 		});
 		
 		AlertDialog dialog = builder.create();
-		
+		dialog.setCanceledOnTouchOutside(false);		
 		dialog.show();
 	}
-
+	
 	/*
 	 * 게임이 종료되었을떄 호출되는 함수
 	 * success가 true이면 성공 false이면 실패
 	 * dialog로 결과를 보여준다.
 	 */
 	public void gameFinish(boolean success){
-		if(success){
-			((ThreadView) sfvTrack).setPause();
+		if(success){//성공했으면 기록을 보여준다.
+			((ThreadView) sfvTrack).setStop();
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
     		
     		builder.setTitle("성 공!")
@@ -171,7 +166,7 @@ public class GameActivity extends Activity {
 				public void onClick(DialogInterface dialog, int which) {
 					Intent intent = new Intent(GameActivity.this,GameActivity.class);
 					intent.putExtra("stage", stage+1);
-					startActivity(intent);
+					startActivity(intent);//history가 남지 않으니 바로 다음 단계로 진행
 				}
 			});
     		
@@ -183,11 +178,12 @@ public class GameActivity extends Activity {
     			}
     		});
     		
-    		AlertDialog dialog = builder.create();
     		
+    		AlertDialog dialog = builder.create();
+    		dialog.setCanceledOnTouchOutside(false);
     		dialog.show();
-		}else{
-			((ThreadView) sfvTrack).setPause();
+		}else{//실패
+			((ThreadView) sfvTrack).setStop();
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
     		
     		builder.setTitle("실 패!")
@@ -211,8 +207,7 @@ public class GameActivity extends Activity {
     		});
     		
     		AlertDialog dialog = builder.create();
-    		
-    		//show dialog
+    		dialog.setCanceledOnTouchOutside(false);
     		dialog.show();
 		}
 	}	

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 public class GroupAdapter extends BaseAdapter {
@@ -18,6 +19,7 @@ public class GroupAdapter extends BaseAdapter {
 		this.layoutResourceId = layoutResourceId;
         this.block = block;
 	}
+	
 	@Override
 	public int getCount() {
 		return block.size();
@@ -39,8 +41,8 @@ public class GroupAdapter extends BaseAdapter {
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		convertView = ((Activity) mContext).getLayoutInflater().inflate(layoutResourceId, parent, false);
-		ImageView iv = (ImageView) convertView.findViewById(R.id.cardimage);
 		int value = block.get(position);
+		ImageView iv = (ImageView) convertView.findViewById(R.id.blockimage);
 		if(value==1)
 			iv.setImageResource(R.drawable.img_1);
 		else if(value==2)
@@ -61,6 +63,9 @@ public class GroupAdapter extends BaseAdapter {
 			iv.setImageResource(R.drawable.img_9);
 		else if(value==10)
 			iv.setImageResource(R.drawable.img_10);
+		else if(value==0){
+			((FrameLayout)convertView).removeAllViews();
+		}
 		return convertView;
 	}
 

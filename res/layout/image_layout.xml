@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layoutimage"
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content" >
+    android:layout_height="wrap_content"
+    android:tag="layoutimage" >
 
     <ImageView
-        android:id="@+id/cardimage"
-        android:layout_width="25dp"
-        android:layout_height="35dp"
+        android:id="@+id/blockimage"
+        android:layout_width="@dimen/block_width"
+        android:layout_height="@dimen/block_height"
         android:contentDescription="@string/each"
         android:scaleType="centerCrop" />
 	
